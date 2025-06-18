@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CarRental DApp</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link href="style.css" rel="stylesheet" />
+    <!-- Ethers.js v6 UMD -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6/dist/ethers.umd.min.js"></script>
+  </head>
+  <body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
+      <div class="container">
+        <span class="navbar-brand mb-0 h1">CarRental DApp</span>
+        <button id="connectBtn" class="btn btn-outline-primary">
+          Connect Wallet
+        </button>
+      </div>
+    </nav>
+
+    <div class="container">
+      <!-- STEP 1: Account List -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card shadow-sm">
+            <div class="card-header bg-white">👤 บัญชีที่เชื่อมต่อ</div>
+            <ul id="accountList" class="list-group list-group-flush">
+              <li class="list-group-item text-center text-muted">
+                ยังไม่ได้เชื่อมต่อ
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2: Car List -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card shadow-sm">
+            <div class="card-header bg-white">🚗 รายการรถเช่า</div>
+            <ul id="cars-list" class="list-group list-group-flush">
+              
+              <li class="list-group-item text-center text-muted">
+                กรุณาเชื่อมต่อกระเป๋า
+              </li>
+            </ul>
+            <div id="notification" class="alert d-none mt-3" role="alert"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3: ประวัติการเช่า-คืน -->
+      <div class="row">
+        <div class="col-12">
+          <div class="card shadow-sm">
+            <div class="card-header bg-white">📋 ประวัติการเช่า-คืน</div>
+            <div class="card-body">
+              <button id="refresh-history" class="btn btn-outline-primary mb-3">
+                รีเฟรชประวัติ
+              </button>
+              <table class="table table-striped" id="history-table">
+                <thead>
+                  <tr>
+                    <th>Car ID</th>
+                    <th>ผู้เช่า</th>
+                    <th>Action</th>
+                    <th>วันที่เวลา</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colspan="4" class="text-center text-muted">
+                      ยังไม่มีประวัติ
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Our app logic -->
+    <script src="app.js"></script>
+  </body>
+</html>
