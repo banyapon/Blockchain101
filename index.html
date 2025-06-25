@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wizardry - ผจญภัยในดันเจี้ยน</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
+        body {
+            font-family: 'Sarabun', sans-serif;
+            overflow: hidden;
+            background-color: #1a202c;
+            color: white;
+        }
+        /* Mobile-First Layout */
+        .game-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-template-rows: repeat(5, auto);
+            height: 100vh;
+            max-height: 100vh;
+            gap: 1rem;
+            padding: 1rem;
+        }
+        .panel {
+            background-color: #2d3748;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            overflow-y: auto;
+            border: 1px solid #4a5568;
+            display: flex;
+            flex-direction: column;
+            min-height: 150px;
+        }
+        #aframe-container {
+            min-height: 35vh;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        
+        /* Team Panel Toggle Styles */
+        #character-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 80%;
+            max-width: 350px;
+            height: 100%;
+            z-index: 50;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+            border-left: none;
+            border-top: none;
+            border-bottom: none;
+        }
+        #character-panel.is-open {
+            transform: translateX(0);
+        }
+        #team-toggle-btn {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 60;
+            width: 50px;
+            height: 50px;
+            background-color: rgba(0,0,0,0.5);
+            border-radius: 50%;
+        }
+
+        /* Desktop Layout (for screens wider than 1024px) */
+        @media (min-width: 1024px) {
+            .game-grid {
+                grid-template-columns: repeat(3, 1fr);
+                grid-template-rows: auto 1fr;
+            }
+            #aframe-container { grid-column: 1 / 3; grid-row: 1 / 2; min-height: 50vh; }
+            #inventory-panel { grid-column: 1 / 2; grid-row: 2 / 3; }
+            #controls-panel { grid-column: 2 / 3; grid-row: 2 / 3; }
+            #events-panel { grid-column: 3 / 4; grid-row: 2 / 3; }
+            
+            /* On desktop, character panel is static again */
+            #character-panel {
+                position: static;
+                transform: translateX(0);
+                width: auto;
+                max-width: none;
+                height: auto;
+                grid-column: 3 / 4;
+                grid-row: 1 / 2;
+            }
+            #team-toggle-btn { display: none; } /* Hide toggle on desktop */
+        }
+
+        .modal {
+            display: none; position: fixed; z-index: 100;
+            left: 0; top: 0; width: 100%; height: 100%;
+            overflow: auto; background-color: rgba(0,0,0,0.6);
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background-color: #2d3748; margin: auto; padding: 2rem;
+            border: 1px solid #4a5568; width: 90%; max-width: 600px;
+            border-radius: 0.5rem; text-align: center;
+        }
+
+        /* Button Styles */
+        .btn {
+            @apply flex justify-center items-center bg-black text-white font-semibold rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75 disabled:bg-gray-600 disabled:text-gray-400;
+            width: 100%;
+            height: 100%;
+            aspect-ratio: 1 / 1;
+        }
+        .btn svg { width: 60%; height: 60%; }
+        .btn-red { @apply px-4 py-2 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700; }
+        .btn-green { @apply px-4 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700; }
+        .btn-yellow { @apply bg-yellow-500 text-black hover:bg-yellow-600; }
+        .btn-upgrade { @apply text-xs py-1 px-2 rounded text-white; }
+    </style>
+</head>
+<body>
+    
+    <!-- Team Toggle Button (Mobile) -->
+    <button id="team-toggle-btn" class="btn">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+        </svg>
+    </button>
+
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="modal" style="display: flex;">
+        <div class="modal-content">
+            <h1 class="text-4xl font-bold mb-4">Wizardry</h1>
+            <p class="mb-6">ยินดีต้อนรับ! ภารกิจของคุณคือการค้นหา 'W' ที่ซ่อนอยู่ในดันเจี้ยน</p>
+            <button id="start-game-btn" class="btn text-2xl px-8 py-4 bg-gray-800">เริ่มภารกิจ</button>
+        </div>
+    </div>
+
+    <!-- Combat Modal -->
+    <div id="combat-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="combat-title" class="text-3xl font-bold mb-4">การต่อสู้เริ่มขึ้น!</h2>
+            <div class="flex justify-around items-center mb-6">
+                <div>
+                    <h3 class="text-xl font-bold">ทีมของคุณ</h3>
+                    <p id="combat-party-hp"></p> <p id="combat-party-atk"></p>
+                </div>
+                <div class="text-2xl font-bold">VS</div>
+                <div>
+                    <h3 class="text-xl font-bold">ศัตรู</h3>
+                    <p id="combat-enemy-name"></p> <p id="combat-enemy-hp"></p> <p id="combat-enemy-atk"></p>
+                </div>
+            </div>
+            <div id="combat-log" class="h-24 overflow-y-auto bg-gray-800 p-2 rounded mb-4 border border-gray-600"></div>
+            <div class="flex justify-center gap-4">
+                <button id="attack-btn" class="btn-red">โจมตี</button>
+                <button id="flee-btn" class="btn bg-gray-800">หลบหนี</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Game UI -->
+    <div id="game-container" class="game-grid" style="display: none;">
+        <div id="aframe-container">
+            <a-scene embedded vr-mode-ui="enabled: false">
+                <a-light type="ambient" color="#CCC"></a-light>
+                <a-light type="point" intensity="0.6" position="2 8 4"></a-light>
+                <a-sky color="#1a202c"></a-sky>
+                <a-entity id="dungeon-entity" position="0 0 0"></a-entity>
+                <a-entity id="player-rig" position="0 1.6 0">
+                    <a-camera id="player-camera" look-controls="pointerLockEnabled: true">
+                        <a-cursor color="#FFF"></a-cursor>
+                    </a-camera>
+                </a-entity>
+            </a-scene>
+        </div>
+
+        <div id="controls-panel" class="panel justify-center items-center">
+             <h2 class="text-2xl font-bold mb-4 border-b border-gray-500 pb-2 self-stretch text-center">ควบคุม</h2>
+             <div class="mb-4 w-full">
+                <button id="roll-dice-btn" class="btn w-full !aspect-auto !h-auto">ทอยลูกเต๋า (<span id="dice-result">?</span>)</button>
+                <p class="text-sm text-center mt-1">เหลือการเดิน: <span id="moves-left">0</span></p>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center w-full max-w-xs">
+                <button id="rotate-left-btn" class="btn btn-yellow">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" /></svg>
+                </button>
+                <button id="move-up-btn" class="btn" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19.5v-15m0 0-6.75 6.75M12 4.5l6.75 6.75" /></svg>
+                </button>
+                <button id="rotate-right-btn" class="btn btn-yellow">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" /></svg>
+                </button>
+                <button id="move-left-btn" class="btn" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12h-15m0 0-6.75 6.75M4.5 12l6.75-6.75" /></svg>
+                </button>
+                <div class="w-full h-full"></div>
+                <button id="move-right-btn" class="btn" disabled>
+                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12h15m0 0-6.75-6.75M19.5 12l-6.75 6.75" /></svg>
+                </button>
+                <div></div>
+                <button id="move-down-btn" class="btn" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m0 0 6.75-6.75M12 19.5l-6.75-6.75" /></svg>
+                </button>
+                <div></div>
+            </div>
+        </div>
+        
+        <div id="character-panel" class="panel">
+            <h2 class="text-2xl font-bold mb-4 border-b border-gray-500 pb-2">ทีมของคุณ</h2>
+            <div id="party-list" class="space-y-4"></div>
+            <div class="mt-auto pt-4 border-t border-gray-500 space-x-2">
+                <button id="hire-btn" class="btn-green w-full">จ้างสมาชิก</button>
+            </div>
+        </div>
+
+        <div id="inventory-panel" class="panel">
+            <h2 class="text-2xl font-bold mb-4 border-b border-gray-500 pb-2">ช่องเก็บของ</h2>
+            <p class="mb-2">เงิน: <span id="money">0</span> G</p>
+            <div class="space-y-2">
+                <h3 class="font-bold">ไอเท็ม (5x4 Table):</h3>
+                <div id="inventory-list" class="grid grid-cols-5 gap-1.5"></div>
+                <h3 class="font-bold mt-4">อาวุธ:</h3>
+                <div id="weapon-list" class="space-y-2"></div>
+            </div>
+        </div>
+
+        <div id="events-panel" class="panel">
+            <h2 class="text-2xl font-bold mb-4 border-b border-gray-500 pb-2">เหตุการณ์</h2>
+            <div id="event-log" class="flex-grow overflow-y-auto bg-gray-800 p-2 rounded">
+                <p>เริ่มต้นการผจญภัย...</p>
+            </div>
+        </div>
+    </div>
+
+<script type="module">
+    // --- GAME STATE AND CONFIGURATION ---
+    const gameState = {
+        party: [],
+        inventory: { items: [], weapons: [], money: 100 },
+        dungeon: { map: [], size: 15, playerPosition: { x: 0, z: 0 }, goalPosition: { x: 0, z: 0 } },
+        gameStatus: 'not_started',
+        moves: { roll: 0, left: 0 },
+        playerRotation: 0,
+    };
+    const INVENTORY_SIZE = 20; // 5x4 grid
+    const TILE = { WALL: 1, PATH: 0, PLAYER: 'P', GOAL: 'W' };
+    const TILE_SCALE = 4;
+
+    // --- DOM Elements ---
+    const elements = {
+        teamToggleBtn: document.getElementById('team-toggle-btn'),
+        startGameBtn: document.getElementById('start-game-btn'),
+        startScreen: document.getElementById('start-screen'),
+        gameContainer: document.getElementById('game-container'),
+        partyList: document.getElementById('party-list'),
+        characterPanel: document.getElementById('character-panel'),
+        money: document.getElementById('money'),
+        inventoryList: document.getElementById('inventory-list'),
+        weaponList: document.getElementById('weapon-list'),
+        eventLog: document.getElementById('event-log'),
+        hireBtn: document.getElementById('hire-btn'),
+        rollDiceBtn: document.getElementById('roll-dice-btn'),
+        diceResult: document.getElementById('dice-result'),
+        movesLeft: document.getElementById('moves-left'),
+        moveUpBtn: document.getElementById('move-up-btn'),
+        moveDownBtn: document.getElementById('move-down-btn'),
+        moveLeftBtn: document.getElementById('move-left-btn'),
+        moveRightBtn: document.getElementById('move-right-btn'),
+        rotateLeftBtn: document.getElementById('rotate-left-btn'),
+        rotateRightBtn: document.getElementById('rotate-right-btn'),
+        dungeonEntity: document.getElementById('dungeon-entity'),
+        playerRig: document.getElementById('player-rig'),
+        combatModal: document.getElementById('combat-modal'),
+        combatTitle: document.getElementById('combat-title'),
+        combatPartyHp: document.getElementById('combat-party-hp'),
+        combatPartyAtk: document.getElementById('combat-party-atk'),
+        combatEnemyName: document.getElementById('combat-enemy-name'),
+        combatEnemyHp: document.getElementById('combat-enemy-hp'),
+        combatEnemyAtk: document.getElementById('combat-enemy-atk'),
+        combatLog: document.getElementById('combat-log'),
+        attackBtn: document.getElementById('attack-btn'),
+        fleeBtn: document.getElementById('flee-btn'),
+    };
+    
+    // --- INITIALIZATION ---
+    function initGame() {
+        logEvent('กำลังสร้างโลก... กรุณารอสักครู่');
+        gameState.gameStatus = 'playing';
+        gameState.party = [];
+        gameState.inventory = { items: [], weapons: [], money: 100 };
+        generateDungeon();
+        hireCharacter('นักรบฝึกหัด', true);
+        elements.startScreen.style.display = 'none';
+        elements.gameContainer.style.display = 'grid';
+        logEvent('ดันเจี้ยนถูกสร้างขึ้นแล้ว! จงค้นหา "W"');
+        
+        setTimeout(() => {
+            const scene = document.querySelector('a-scene');
+            if (scene.hasLoaded) scene.resize();
+            else scene.addEventListener('loaded', () => scene.resize());
+        }, 100);
+    }
+
+    // --- DUNGEON GENERATION ---
+    function generateDungeon() {
+        const size = gameState.dungeon.size;
+        const map = Array(size).fill(null).map(() => Array(size).fill(TILE.WALL));
+        function carve(cx, cz) {
+            const directions = [[0, -2], [0, 2], [-2, 0], [2, 0]];
+            directions.sort(() => Math.random() - 0.5);
+            for (const [dx, dz] of directions) {
+                const nx = cx + dx;
+                const nz = cz + dz;
+                if (nx > 0 && nx < size - 1 && nz > 0 && nz < size - 1 && map[nz][nx] === TILE.WALL) {
+                    map[nz][nx] = TILE.PATH;
+                    map[cz + dz / 2][cx + dx / 2] = TILE.PATH;
+                    carve(nx, nz);
+                }
+            }
+        }
+        map[1][1] = TILE.PATH;
+        carve(1, 1);
+        gameState.dungeon.map = map;
+        let playerPos, goalPos;
+        const minDistance = size * 0.7;
+        do {
+            playerPos = findRandomPath();
+            goalPos = findRandomPath();
+        } while (getDistance(playerPos, goalPos) < minDistance);
+        gameState.dungeon.playerPosition = {x: playerPos.x, z: playerPos.z};
+        gameState.dungeon.goalPosition = {x: goalPos.x, z: goalPos.z};
+        map[playerPos.z][playerPos.x] = TILE.PLAYER;
+        map[goalPos.z][goalPos.x] = TILE.GOAL;
+    }
+
+    function findRandomPath() {
+        const paths = [];
+        for (let z = 1; z < gameState.dungeon.size - 1; z++) {
+            for (let x = 1; x < gameState.dungeon.size - 1; x++) {
+                if (gameState.dungeon.map[z][x] === TILE.PATH) paths.push({x, z});
+            }
+        }
+        return paths[Math.floor(Math.random() * paths.length)] || {x: 1, z: 1};
+    }
+
+    function getDistance(pos1, pos2) {
+        return Math.sqrt(Math.pow(pos1.x - pos2.x, 2) + Math.pow(pos1.z - pos2.z, 2));
+    }
+
+    // --- RENDERING ---
+    function renderAll() {
+        renderParty();
+        renderInventory();
+        renderDungeon3D();
+        updateMovementUI();
+    }
+
+    function renderDungeon3D() {
+        const scene = elements.dungeonEntity;
+        scene.innerHTML = '';
+        const map = gameState.dungeon.map;
+        const size = gameState.dungeon.size;
+        const offset = - (size * TILE_SCALE) / 2 + TILE_SCALE / 2;
+        for (let z = 0; z < size; z++) {
+            for (let x = 0; x < size; x++) {
+                const pos = `${x * TILE_SCALE + offset} 0 ${z * TILE_SCALE + offset}`;
+                if (map[z]?.[x] === TILE.WALL) {
+                    const wall = document.createElement('a-box');
+                    wall.setAttribute('position', `${pos.split(' ')[0]} ${TILE_SCALE/2} ${pos.split(' ')[2]}`);
+                    wall.setAttribute('width', TILE_SCALE);
+                    wall.setAttribute('height', TILE_SCALE);
+                    wall.setAttribute('depth', TILE_SCALE);
+                    wall.setAttribute('color', 'red');
+                    scene.appendChild(wall);
+                } else if (map[z]?.[x] !== undefined) {
+                    const floor = document.createElement('a-plane');
+                    floor.setAttribute('position', pos);
+                    floor.setAttribute('width', TILE_SCALE);
+                    floor.setAttribute('height', TILE_SCALE);
+                    floor.setAttribute('rotation', '-90 0 0');
+                    floor.setAttribute('color', '#2E7D32');
+                    scene.appendChild(floor);
+                    if (map[z][x] === TILE.GOAL) {
+                        const goal = document.createElement('a-sphere');
+                        goal.setAttribute('position', `${pos.split(' ')[0]} ${TILE_SCALE/2} ${pos.split(' ')[2]}`);
+                        goal.setAttribute('radius', TILE_SCALE / 4);
+                        goal.setAttribute('color', '#FBBF24');
+                        goal.setAttribute('material', 'emissive: #FBBF24; emissiveIntensity: 2');
+                        scene.appendChild(goal);
+                    }
+                }
+            }
+        }
+        const playerX = gameState.dungeon.playerPosition.x * TILE_SCALE + offset;
+        const playerZ = gameState.dungeon.playerPosition.z * TILE_SCALE + offset;
+        elements.playerRig.setAttribute('position', `${playerX} 1.6 ${playerZ}`);
+    }
+
+    function renderParty() {
+        elements.partyList.innerHTML = gameState.party.length === 0 ? '<p>ไม่มีสมาชิกในทีม</p>' : 
+            gameState.party.map((member, index) => `
+                <div class="p-2 bg-gray-700 rounded">
+                    <div class="flex justify-between items-center">
+                        <p class="font-bold text-lg">${member.name} (Lvl ${member.level})</p>
+                        <button data-index="${index}" class="fire-btn text-xs bg-red-800 hover:bg-red-700 text-white py-1 px-2 rounded">ไล่ออก</button>
+                    </div>
+                    <p>HP: ${member.hp}/${member.maxHp} | ATK: ${member.atk} | DEF: ${member.def}</p>
+                    <div class="mt-2 space-x-1">
+                        <button data-index="${index}" class="upgrade-btn btn-upgrade bg-yellow-600 hover:bg-yellow-500" data-stat="atk">อัพ ATK (50G)</button>
+                        <button data-index="${index}" class="upgrade-btn btn-upgrade bg-cyan-600 hover:bg-cyan-500" data-stat="def">อัพ DEF (50G)</button>
+                    </div>
+                </div>`).join('');
+        document.querySelectorAll('.fire-btn').forEach(btn => btn.addEventListener('click', (e) => fireCharacter(e.target.dataset.index)));
+        document.querySelectorAll('.upgrade-btn').forEach(btn => btn.addEventListener('click', (e) => upgradeStat(e.target.dataset.index, e.target.dataset.stat)));
+    }
+
+    function renderInventory() {
+        elements.money.textContent = gameState.inventory.money;
+        elements.inventoryList.innerHTML = '';
+        for (let i = 0; i < INVENTORY_SIZE; i++) {
+            const item = gameState.inventory.items[i];
+            const itemSlot = document.createElement('div');
+            itemSlot.className = 'bg-gray-700 rounded text-center flex items-center justify-center p-1 border border-gray-600 aspect-square';
+            if (item) {
+                itemSlot.innerHTML = `<p class="text-xs cursor-pointer hover:text-yellow-300">${item.name}</p>`;
+                itemSlot.onclick = () => useItem(i);
+            } else {
+                itemSlot.innerHTML = `<p class="text-gray-500 text-xs opacity-50">ว่าง</p>`;
+            }
+            elements.inventoryList.appendChild(itemSlot);
+        }
+        elements.weaponList.innerHTML = gameState.inventory.weapons.length === 0 ? '<p class="text-gray-400">ไม่มีอาวุธ</p>' : gameState.inventory.weapons.map(w => `<div class="p-2 bg-gray-700 rounded"><p>${w.name} (ATK+${w.atk})</p></div>`).join('');
+    }
+    
+    function logEvent(msg) { elements.eventLog.prepend(Object.assign(document.createElement('p'),{textContent:`> ${msg}`})); }
+    
+    // --- CHARACTER & MOVEMENT ---
+    function hireCharacter(name = 'ทหารรับจ้าง', isInitial = false) {
+        if(gameState.party.length >= 4){ logEvent('ทีมของคุณเต็มแล้ว'); return; }
+        if(!isInitial) {
+            if(gameState.inventory.money < 50) { logEvent('เงินไม่พอจ้าง'); return; }
+            gameState.inventory.money -= 50;
+        }
+        const newMember = {id:Date.now(),name,level:1,maxHp:20+Math.floor(Math.random()*10),hp:0,atk:5+Math.floor(Math.random()*3),def:2+Math.floor(Math.random()*3)};
+        newMember.hp = newMember.maxHp;
+        gameState.party.push(newMember);
+        logEvent(`จ้าง ${name} เข้าร่วมทีม!`);
+        renderAll();
+    }
+
+    function fireCharacter(index) {
+        if(gameState.party.length <= 1) { logEvent('ไม่สามารถไล่สมาชิกคนสุดท้ายได้!'); return; }
+        const fired = gameState.party.splice(index, 1);
+        logEvent(`${fired[0].name} ได้ออกจากทีมไปแล้ว`);
+        renderAll();
+    }
+
+    function upgradeStat(index, stat) {
+        const cost = 50;
+        if (gameState.inventory.money < cost) { logEvent(`เงินไม่พอ`); return; }
+        gameState.inventory.money -= cost;
+        const member = gameState.party[index];
+        if (stat === 'atk') member.atk += 1; else if (stat === 'def') member.def += 1;
+        logEvent(`${member.name} อัพเกรด ${stat.toUpperCase()}!`);
+        renderAll();
+    }
+    
+    function useItem(itemIndex) {
+        const item = gameState.inventory.items[itemIndex];
+        if(!item) return;
+        if(item.name === 'Potion') {
+            const targetName = prompt(`ใช้ Potion กับใคร?\nสมาชิก: ${gameState.party.map(m => m.name).join(', ')}`);
+            if (!targetName) return;
+            const member = gameState.party.find(m => m.name.toLowerCase() === targetName.toLowerCase());
+            if(member) {
+                member.hp = Math.min(member.maxHp, member.hp + 20);
+                gameState.inventory.items.splice(itemIndex, 1);
+                logEvent(`ใช้ Potion กับ ${member.name} ฟื้นฟู 20 HP!`);
+                renderAll();
+            } else { logEvent('ไม่พบสมาชิกคนดังกล่าว'); }
+        }
+    }
+
+    function rollDice() {
+        if (gameState.moves.left > 0) { logEvent('คุณยังเดินไม่ครบ'); return; }
+        const roll = Math.floor(Math.random() * 6) + 1;
+        gameState.moves.roll = roll; gameState.moves.left = roll;
+        logEvent(`คุณทอยลูกเต๋าได้ ${roll} แต้ม!`);
+        updateMovementUI();
+    }
+    
+    function updateMovementUI() {
+        elements.diceResult.textContent = gameState.moves.roll;
+        elements.movesLeft.textContent = gameState.moves.left;
+        const canMove = gameState.moves.left > 0 && gameState.gameStatus === 'playing';
+        [elements.moveUpBtn, elements.moveDownBtn, elements.moveLeftBtn, elements.moveRightBtn].forEach(b => b.disabled = !canMove);
+        elements.rollDiceBtn.disabled = canMove;
+    }
+
+    function rotatePlayer(angle) {
+        gameState.playerRotation += angle;
+        elements.playerRig.setAttribute('rotation', `0 ${gameState.playerRotation} 0`);
+    }
+
+    function getMoveVector(direction) {
+        const normalizedRotation = (gameState.playerRotation % 360 + 360) % 360;
+        let moveAngle = normalizedRotation;
+        
+        if (direction === 'backward') moveAngle += 180;
+        if (direction === 'strafe_left') moveAngle -= 90;
+        if (direction === 'strafe_right') moveAngle += 90;
+
+        const finalAngle = (moveAngle % 360 + 360) % 360;
+        let dx = 0, dz = 0;
+
+        if (finalAngle === 0) dz = -1;       // Forward
+        else if (finalAngle === 90) dx = 1;  // Right
+        else if (finalAngle === 180) dz = 1; // Backward
+        else if (finalAngle === 270) dx = -1;// Left
+
+        return { dx, dz };
+    }
+    
+    function movePlayer(dx, dz) {
+        const { playerPosition: pos, map, size } = gameState.dungeon;
+        const newPos = { x: pos.x + dx, z: pos.z + dz };
+        if (newPos.x < 0 || newPos.x >= size || newPos.z < 0 || newPos.z >= size || map[newPos.z][newPos.x] === TILE.WALL) {
+            logEvent('โอ๊ะ! ไปต่อไม่ได้'); return;
+        }
+        map[pos.z][pos.x] = TILE.PATH;
+        pos.x = newPos.x; pos.z = newPos.z;
+        if(pos.x === gameState.dungeon.goalPosition.x && pos.z === gameState.dungeon.goalPosition.z) {
+            map[pos.z][pos.x] = TILE.PLAYER; renderDungeon3D(); winGame(); return;
+        }
+        map[pos.z][pos.x] = TILE.PLAYER;
+        gameState.moves.left--;
+        renderDungeon3D();
+        updateMovementUI();
+        if (gameState.moves.left === 0) triggerRandomEvent();
+    }
+
+    function triggerRandomEvent() {
+        const rand = Math.random();
+        if (rand < 0.15) {
+            if (gameState.inventory.items.length < INVENTORY_SIZE) {
+                gameState.inventory.items.push({ name: 'Potion' });
+                logEvent('คุณเจอ Potion!');
+            } else { logEvent('เจอ Potion แต่ช่องเก็บของเต็ม!'); }
+            renderInventory();
+        } else if (rand < 0.25) {
+            const amount = 10 + Math.floor(Math.random() * 41);
+            gameState.inventory.money += amount;
+            logEvent(`คุณเจอถุงเงิน! ได้รับ ${amount}G`);
+            renderInventory();
+        } else if (rand < 0.30) { logEvent('คุณเจอพ่อค้าลึกลับ! (ยังไม่เปิดบริการ)');
+        } else if (rand < 0.55) { startCombat();
+        } else { logEvent('...ลมพัดผ่านไปอย่างเงียบงัน...'); }
+    }
+
+    // --- COMBAT SYSTEM ---
+    let combatState = {};
+    function startCombat() {
+        gameState.gameStatus = 'combat';
+        updateMovementUI();
+        const enemy = createEnemy();
+        const partyTotal = getPartyStats();
+        combatState = { enemy };
+        elements.combatTitle.textContent = `การต่อสู้กับ ${enemy.name}!`;
+        elements.combatPartyHp.textContent = `HP: ${partyTotal.hp}`;
+        elements.combatPartyAtk.textContent = `ATK: ${partyTotal.atk}`;
+        elements.combatEnemyName.textContent = enemy.name;
+        elements.combatEnemyHp.textContent = `HP: ${combatState.enemy.hp}/${combatState.enemy.maxHp}`;
+        elements.combatEnemyAtk.textContent = `ATK: ${combatState.enemy.atk}`;
+        elements.combatLog.innerHTML = '';
+        logCombat('ศัตรูปรากฏตัว!');
+        elements.combatModal.style.display = 'flex';
+    }
+    
+    function createEnemy() {
+        const names = ['สไลม์', 'ก็อบลิน', 'โครงกระดูก', 'ค้างคาวปีศาจ'];
+        const lvl = gameState.party.length > 0 ? Math.max(1, Math.floor(getPartyStats().level/gameState.party.length)) : 1;
+        const e = { name: names[Math.floor(Math.random()*names.length)], maxHp: 15*lvl+Math.floor(Math.random()*5*lvl), hp:0, atk: 4*lvl+Math.floor(Math.random()*2*lvl), def: 1*lvl+Math.floor(Math.random()*lvl) };
+        e.hp = e.maxHp;
+        return e;
+    }
+
+    function getPartyStats() {
+        return gameState.party.reduce((acc, m) => {
+            if (m.hp > 0) { acc.hp += m.hp; acc.atk += m.atk; acc.def += m.def; acc.level += m.level; }
+            return acc;
+        }, { hp: 0, atk: 0, def: 0, level: 0 });
+    }
+    
+    function combatTurn() {
+        const partyStats = getPartyStats();
+        const playerDamage = Math.max(1, partyStats.atk - combatState.enemy.def);
+        combatState.enemy.hp -= playerDamage;
+        logCombat(`ทีมของคุณโจมตี ทำความเสียหาย ${playerDamage} แต้ม!`);
+        elements.combatEnemyHp.textContent = `HP: ${combatState.enemy.hp}/${combatState.enemy.maxHp}`;
+        if (combatState.enemy.hp <= 0) { winCombat(); return; }
+        const enemyDamage = Math.max(1, combatState.enemy.atk - partyStats.def);
+        distributeDamage(enemyDamage);
+        logCombat(`${combatState.enemy.name} โจมตีกลับ ทำความเสียหายรวม ${enemyDamage} แต้ม!`);
+        renderParty();
+        elements.combatPartyHp.textContent = `HP: ${getPartyStats().hp}`;
+        if (getPartyStats().hp <= 0) loseCombat();
+    }
+    
+    function distributeDamage(totalDamage) {
+        let dmg = totalDamage;
+        let alive = gameState.party.filter(m => m.hp > 0);
+        while(dmg > 0 && alive.length > 0) {
+            let target = alive[Math.floor(Math.random()*alive.length)];
+            target.hp = Math.max(0, target.hp - 1);
+            dmg--;
+            alive = gameState.party.filter(m => m.hp > 0);
+        }
+    }
+
+    function logCombat(msg) { elements.combatLog.prepend(Object.assign(document.createElement('p'),{textContent:msg})); }
+    
+    function winCombat() {
+        logEvent(`คุณเอาชนะ ${combatState.enemy.name} ได้!`);
+        const gold = 5 + Math.floor(Math.random() * 10);
+        gameState.inventory.money += gold;
+        logEvent(`ได้รับ ${gold}G`);
+        setTimeout(endCombat, 1000);
+    }
+
+    function loseCombat() { logEvent('ทีมของคุณพ่ายแพ้...'); setTimeout(endCombat, 1000); gameOver(); }
+
+    function flee() {
+        logEvent("กำลังพยายามหลบหนี...");
+        if (Math.random() > 0.5) {
+            logCombat("คุณหลบหนีได้สำเร็จ!");
+            setTimeout(endCombat, 1000);
+        } else {
+            logCombat("หลบหนีไม่สำเร็จ!");
+            const enemyDamage = Math.max(1, combatState.enemy.atk - getPartyStats().def);
+            distributeDamage(enemyDamage);
+            logCombat(`${combatState.enemy.name} โจมตีระหว่างพยายามหนี!`);
+            renderParty();
+        }
+    }
+    
+    function endCombat() { gameState.gameStatus = 'playing'; elements.combatModal.style.display = 'none'; renderAll(); }
+
+    function winGame() {
+        gameState.gameStatus = 'game_over'; updateMovementUI();
+        logEvent('สุดยอด! คุณค้นพบเป้าหมายและทำภารกิจสำเร็จ!');
+        setTimeout(() => alert('ยินดีด้วย! คุณทำภารกิจสำเร็จ!'), 100);
+    }
+    
+    function gameOver() {
+        gameState.gameStatus = 'game_over'; updateMovementUI();
+        logEvent('เกมจบแล้ว');
+        setTimeout(() => alert('คุณพ่ายแพ้... ลองใหม่อีกครั้งนะ'), 100);
+    }
+
+    // --- EVENT LISTENERS ---
+    elements.startGameBtn.addEventListener('click', initGame);
+    elements.hireBtn.addEventListener('click', () => hireCharacter());
+    elements.rollDiceBtn.addEventListener('click', rollDice);
+    elements.rotateLeftBtn.addEventListener('click', () => rotatePlayer(-90));
+    elements.rotateRightBtn.addEventListener('click', () => rotatePlayer(90));
+    elements.attackBtn.addEventListener('click', combatTurn);
+    elements.fleeBtn.addEventListener('click', flee);
+    elements.teamToggleBtn.addEventListener('click', () => {
+        elements.characterPanel.classList.toggle('is-open');
+    });
+
+    // New movement listeners
+    elements.moveUpBtn.addEventListener('click', () => { const vec = getMoveVector('forward'); movePlayer(vec.dx, vec.dz); });
+    elements.moveDownBtn.addEventListener('click', () => { const vec = getMoveVector('backward'); movePlayer(vec.dx, vec.dz); });
+    elements.moveLeftBtn.addEventListener('click', () => { const vec = getMoveVector('strafe_left'); movePlayer(vec.dx, vec.dz); });
+    elements.moveRightBtn.addEventListener('click', () => { const vec = getMoveVector('strafe_right'); movePlayer(vec.dx, vec.dz); });
+
+</script>
+
+</body>
+</html>
