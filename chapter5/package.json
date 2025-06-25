@@ -1,0 +1,23 @@
+{
+  "name": "redeempoint",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "hardhat",
+    "redeem",
+    "point",
+    "point system",
+    "point system hardhat"
+  ],
+  "author": "banyapon poolsawas",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.24.3"
+  }
+}
