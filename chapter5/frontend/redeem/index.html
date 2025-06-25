@@ -5,104 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Simple Coupon DApp</title>
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
-        background-color: #f4f4f4;
-        color: #333;
-      }
-      .container {
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        max-width: 800px;
-        margin: 0 auto;
-      }
-      h1,
-      h2 {
-        color: #0056b3;
-      }
-      label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: bold;
-      }
-      input[type="text"],
-      input[type="number"],
-      textarea {
-        width: calc(100% - 22px);
-        padding: 10px;
-        margin-bottom: 10px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-      }
-      button {
-        background-color: #007bff;
-        color: white;
-        padding: 10px 15px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 16px;
-        margin-right: 10px;
-      }
-      button:hover {
-        background-color: #0056b3;
-      }
-      #status {
-        margin-top: 20px;
-        padding: 10px;
-        border-radius: 4px;
-      }
-      .success {
-        background-color: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-      }
-      .error {
-        background-color: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-      }
-      .info {
-        background-color: #cce5ff;
-        color: #004085;
-        border: 1px solid #b8daff;
-      }
-      .coupon-card {
-        border: 1px solid #eee;
-        padding: 15px;
-        margin-bottom: 10px;
-        border-radius: 5px;
-        background-color: #f9f9f9;
-      }
-      .coupon-card img {
-        max-width: 100px;
-        height: auto;
-        margin-top: 10px;
-        display: block;
-      }
-    </style>
+    <link rel="stylesheet" href="redeem/styles.css" />
   </head>
   <body>
     <div class="container">
       <h1>Simple Coupon DApp</h1>
-      <p>
-        Connect to your Ethereum wallet (e.g., MetaMask) to interact with the
-        contract.
-      </p>
+      <p>Connect to your Ethereum wallet (e.g., MetaMask) to interact with the contract.</p>
       <p>
         <strong>Your Account:</strong>
         <span id="currentAccount">Not connected</span>
       </p>
       <button onclick="connectWallet()">Connect Wallet</button>
-
       <hr />
-
       <h2>Contract Interaction</h2>
-
       <h3>Award Coupon (Owner Only)</h3>
       <div>
         <label for="awardToAddress">To Address:</label>
@@ -126,28 +41,19 @@
         />
         <button onclick="awardCoupon()">Award Coupon</button>
       </div>
-
       <hr />
-
       <h3>Mark Coupon as Used (Owner Only)</h3>
       <div>
         <label for="markUsedTokenId">Coupon Token ID:</label>
-        <input
-          type="number"
-          id="markUsedTokenId"
-          placeholder="Enter coupon token ID"
+        <input type="number" id="markUsedTokenId" placeholder="Enter coupon token ID"
         />
         <button onclick="markAsUsed()">Mark as Used</button>
       </div>
-
       <hr />
-
       <h3>My Coupons</h3>
       <button onclick="getMyCoupons()">Get My Coupons</button>
       <div id="myCouponsList"></div>
-
       <hr />
-
       <h3>Get Specific Coupon Details</h3>
       <div>
         <label for="getCouponId">Coupon Token ID:</label>
@@ -159,140 +65,8 @@
         <button onclick="getCouponDetails()">Get Coupon Details</button>
         <div id="couponDetails"></div>
       </div>
-
       <div id="status"></div>
     </div>
-
-    <script>
-      const contractABI = [ /* … same ABI as before … */ ];
-      const contractAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; // replace!
-
-      let provider, signer, contract;
-      const statusDiv = document.getElementById("status");
-      const currentAccountSpan = document.getElementById("currentAccount");
-
-      function displayStatus(msg, type) {
-        statusDiv.textContent = msg;
-        statusDiv.className = type;
-      }
-
-      async function connectWallet() {
-        if (!window.ethereum) {
-          displayStatus("Please install MetaMask.", "error");
-          return;
-        }
-        try {
-          await window.ethereum.request({ method: "eth_requestAccounts" });
-          provider = new ethers.providers.Web3Provider(window.ethereum);
-          signer = provider.getSigner();
-          contract = new ethers.Contract(contractAddress, contractABI, signer);
-          const account = await signer.getAddress();
-          currentAccountSpan.textContent = account;
-          displayStatus("Wallet connected!", "success");
-        } catch (err) {
-          console.error(err);
-          displayStatus(`Connection failed: ${err.message}`, "error");
-        }
-      }
-
-      async function awardCoupon() {
-        if (!contract) return displayStatus("Connect wallet first.", "error");
-        const to = document.getElementById("awardToAddress").value.trim();
-        const code = document.getElementById("awardCode").value.trim();
-        const desc = document.getElementById("awardDescription").value.trim();
-        const img = document.getElementById("awardImage").value.trim();
-        if (!ethers.utils.isAddress(to)) {
-          return displayStatus("Invalid address.", "error");
-        }
-        if (!code || !desc) {
-          return displayStatus("Code & description required.", "error");
-        }
-        try {
-          displayStatus("Awarding…", "info");
-          const tx = await contract.awardCoupon(to, code, desc, img);
-          await tx.wait();
-          displayStatus(`Awarded! Tx: ${tx.hash}`, "success");
-        } catch (e) {
-          console.error(e);
-          displayStatus(`Error: ${e.reason || e.message}`, "error");
-        }
-      }
-
-      async function markAsUsed() {
-        if (!contract) return displayStatus("Connect wallet first.", "error");
-        const id = document.getElementById("markUsedTokenId").value;
-        if (!id) return displayStatus("Enter token ID.", "error");
-        try {
-          displayStatus(`Marking #${id}…`, "info");
-          const tx = await contract.markAsUsed(id);
-          await tx.wait();
-          displayStatus(`Coupon #${id} used. Tx: ${tx.hash}`, "success");
-        } catch (e) {
-          console.error(e);
-          displayStatus(`Error: ${e.reason || e.message}`, "error");
-        }
-      }
-
-      async function getMyCoupons() {
-        if (!contract) return displayStatus("Connect wallet first.", "error");
-        try {
-          displayStatus("Fetching coupons…", "info");
-          const coupons = await contract.getMyCoupons();
-          const list = document.getElementById("myCouponsList");
-          list.innerHTML = "";
-          if (coupons.length === 0) {
-            list.innerHTML = "<p>No coupons found.</p>";
-            return displayStatus("No coupons.", "info");
-          }
-          const account = await signer.getAddress();
-          const ids = await Promise.all(
-            coupons.map((_, i) => contract.ownerCoupons(account, i))
-          );
-          coupons.forEach((c, i) => {
-            const tokenId = ids[i].toString();
-            const card = document.createElement("div");
-            card.className = "coupon-card";
-            card.innerHTML = `
-              <h3>Coupon ID: ${tokenId}</h3>
-              <p><strong>Code:</strong> ${c.code}</p>
-              <p><strong>Description:</strong> ${c.description}</p>
-              <p><strong>Status:</strong> ${
-                c.isUsed
-                  ? '<span style="color:red;">Used</span>'
-                  : '<span style="color:green;">Unused</span>'
-              }</p>
-              ${c.image ? `<img src="${c.image}" />` : ""}
-            `;
-            list.appendChild(card);
-          });
-          displayStatus("Coupons loaded.", "success");
-        } catch (e) {
-          console.error(e);
-          displayStatus(`Error: ${e.reason || e.message}`, "error");
-        }
-      }
-
-      async function getCouponDetails() {
-        if (!contract) return displayStatus("Connect wallet first.", "error");
-        const id = document.getElementById("getCouponId").value;
-        if (!id) return displayStatus("Enter token ID.", "error");
-        try {
-          displayStatus(`Loading #${id}…`, "info");
-          const [code, desc, img, used, ownerAddr] =
-            await contract.getCoupon(id);
-          document.getElementById("couponDetails").innerHTML = `
-            <p><strong>Code:</strong> ${code}</p>
-            <p><strong>Description:</strong> ${desc}</p>
-            <p><strong>Image:</strong> ${img || "N/A"}</p>
-            <p><strong>Used:</strong> ${used ? "Yes" : "No"}</p>
-            <p><strong>Owner:</strong> ${ownerAddr}</p>
-          `;
-          displayStatus(`Details for #${id} loaded.`, "success");
-        } catch (e) {
-          console.error(e);
-          displayStatus(`Error: ${e.reason || e.message}`, "error");
-        }
-      }
-    </script>
+    <script src="redeem/backend.js"></script>
   </body>
 </html>
