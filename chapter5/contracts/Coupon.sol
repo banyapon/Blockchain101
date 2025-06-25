@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
+
 contract SimpleCoupon {
     string public name = "SimpleCoupon";
     string public symbol = "SCPT";
@@ -7,13 +8,13 @@ contract SimpleCoupon {
     uint256 public nextTokenId;
 
     struct Coupon {
-        string code; //รหัสคูปอง
-        string description; //คำอธิบายคูปอง
-        string image; //ลิงก์รูปภาพคูปอง (optional)
-        bool isUsed; //สถานะการใช้งานคูปอง true = ใช้งานแล้ว, false = ยังไม่ใช้งาน
-        address owner; //เจ้าของคูปอง
+        string code;
+        string description;
+        string image; //add New
+        bool isUsed;
+        address owner;
     }
-    //mapping
+
     mapping(uint256 => Coupon) public coupons;
     mapping(address => uint256[]) public ownerCoupons;
 
@@ -22,17 +23,15 @@ contract SimpleCoupon {
         _;
     }
 
-    //constructor
     constructor() {
         owner = msg.sender;
     }
 
-    //function
     function awardCoupon(
         address to,
         string memory code,
         string memory description,
-        string memory image // optional image link
+        string memory image
     ) public onlyOwner {
         coupons[nextTokenId] = Coupon(code, description, image, false, to);
         ownerCoupons[to].push(nextTokenId);
@@ -58,8 +57,18 @@ contract SimpleCoupon {
 
     function getCoupon(
         uint256 tokenId
-    ) public view returns (string memory, string memory, string memory, bool, address) {
+    )
+        public
+        view
+        returns (string memory, string memory, string memory, bool, address)
+    {
         Coupon memory c = coupons[tokenId];
         return (c.code, c.description, c.image, c.isUsed, c.owner);
+    }
+
+    function getTokenIdsByOwner(
+        address user
+    ) public view returns (uint256[] memory) {
+        return ownerCoupons[user];
     }
 }
