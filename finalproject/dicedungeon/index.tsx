@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -529,6 +530,12 @@ const App: React.FC = () => {
                 </div>
             </div>
     
+            {/* Dice Section for Desktop */}
+            <div className="hidden lg:flex flex-col items-center gap-2 pt-4 border-t border-gray-700">
+                <div className={`dice text-6xl ${isRolling ? 'rolling' : ''}`}>{diceDisplay}</div>
+                <button onClick={rollDice} disabled={isMoving || playerHealth <= 0 || !web3 || isInCombat} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed">Roll Dice</button>
+            </div>
+
             {/* Message Log */}
             <div className="flex-grow flex flex-col min-h-0">
                 <h2 className="font-semibold text-white mb-2">Recent Events:</h2>
@@ -593,13 +600,13 @@ const App: React.FC = () => {
 
 
                 {/* Main Content */}
-                <div className="w-full flex-grow flex flex-col items-center h-full">
+                <div className="w-full flex-grow flex flex-col items-center justify-center h-full">
                     {/* Mobile Logo */}
                     <div className="w-full flex justify-center py-2 lg:hidden">
                         <img src="images/logo.png" alt="Dice Dungeon Logo" className="h-10 w-auto"/>
                     </div>
                     {/* Board Section */}
-                    <div className="flex-grow w-full flex flex-col items-center justify-center">
+                    <div className="w-full flex flex-col items-center justify-center">
                         <div id="board-container" className="board-container flex-shrink-0 flex items-center justify-center">
                             <div id="board" ref={boardRef} className="board rounded-lg overflow-hidden shadow-2xl">
                                 {boardLayout.length > 0 && Array.from({ length: boardSize * boardSize }).map((_, index) => {
@@ -626,8 +633,8 @@ const App: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                     {/* Dice Section */}
-                    <div className="flex flex-col items-center gap-2 py-2">
+                     {/* Dice Section for Mobile */}
+                    <div className="flex flex-col items-center gap-2 pt-2 lg:hidden">
                         <div className={`dice text-6xl ${isRolling ? 'rolling' : ''}`}>{diceDisplay}</div>
                         <button onClick={rollDice} disabled={isMoving || playerHealth <= 0 || !web3 || isInCombat} className="w-64 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed">Roll Dice</button>
                     </div>
