@@ -138,7 +138,7 @@ const App: React.FC = () => {
     const generateRandomBoardLayout = useCallback((level: number): TileData[] => {
         const newLayout: TileData[] = Array(totalTiles).fill(null);
         newLayout[0] = { type: 'start', icon: '🏁' };
-        const cornerImage = 'https://raw.githubusercontent.com/banyapon/Blockchain101/refs/heads/main/game/images/redcastle.png';
+        const cornerImage = 'images/redcastle.png';
         newLayout[boardSize - 1] = { type: 'corner', name: 'Castle', image: cornerImage };
         newLayout[(boardSize - 1) * 2] = { type: 'corner', name: 'Castle', image: cornerImage };
         newLayout[(boardSize - 1) * 3] = { type: 'corner', name: 'Castle', image: cornerImage };
@@ -154,22 +154,22 @@ const App: React.FC = () => {
         shuffleArray(allWeaponIds);
         const weaponCount = Math.floor(Math.random() * 2) + 1; // 1 or 2 weapons
         const weaponsForThisLevel = allWeaponIds.slice(0, weaponCount);
-        const itemImage = 'https://raw.githubusercontent.com/banyapon/Blockchain101/refs/heads/main/game/images/weapon.png';
+        const itemImage = 'images/weapon.png';
         const itemsToPlace: TileData[] = weaponsForThisLevel.map(id => ({ type: 'item', name: 'Weapon', image: itemImage, weaponId: id }));
 
         // Scale monster power based on level
         const powerBonus = (level - 1) * 5;
         let baseMonsters: TileData[] = [
-             { type: 'monster', name: 'Goblin', image: 'https://raw.githubusercontent.com/banyapon/Blockchain101/refs/heads/main/game/images/goblin.png', power: 10 },
-             { type: 'monster', name: 'Ghost', image: 'https://raw.githubusercontent.com/banyapon/Blockchain101/refs/heads/main/game/images/ghost.png', power: 15 },
-             { type: 'monster', name: 'Dragon', image: 'https://raw.githubusercontent.com/banyapon/Blockchain101/refs/heads/main/game/images/dragon.png', power: 25, isBoss: true },
-             { type: 'monster', name: 'Ark', image: 'https://raw.githubusercontent.com/banyapon/Blockchain101/refs/heads/main/game/images/ark.png', power: 12 },
-             { type: 'monster', name: 'Wolf', image: 'https://raw.githubusercontent.com/banyapon/Blockchain101/refs/heads/main/game/images/wolve.png', power: 18 },
-             { type: 'monster', name: 'Caster', image: 'https://raw.githubusercontent.com/banyapon/Blockchain101/refs/heads/main/game/images/caster.png', power: 22 },
-             { type: 'monster', name: 'Snake', image: 'https://raw.githubusercontent.com/banyapon/Blockchain101/refs/heads/main/game/images/snake.png', power: 14 },
-             { type: 'monster', name: 'Scorpion', image: 'https://raw.githubusercontent.com/banyapon/Blockchain101/refs/heads/main/game/images/sporpion.png', power: 19 },
-             { type: 'monster', name: 'Bat', image: 'https://raw.githubusercontent.com/banyapon/Blockchain101/refs/heads/main/game/images/bat.png', power: 8 },
-             { type: 'monster', name: 'Golem', image: 'https://raw.githubusercontent.com/banyapon/Blockchain101/refs/heads/main/game/images/golem.png', power: 30 }
+             { type: 'monster', name: 'Goblin', image: 'images/goblin.png', power: 10 },
+             { type: 'monster', name: 'Ghost', image: 'images/ghost.png', power: 15 },
+             { type: 'monster', name: 'Dragon', image: 'images/dragon.png', power: 25, isBoss: true },
+             { type: 'monster', name: 'Ark', image: 'images/ark.png', power: 12 },
+             { type: 'monster', name: 'Wolf', image: 'images/wolve.png', power: 18 },
+             { type: 'monster', name: 'Caster', image: 'images/caster.png', power: 22 },
+             { type: 'monster', name: 'Snake', image: 'images/snake.png', power: 14 },
+             { type: 'monster', name: 'Scorpion', image: 'images/sporpion.png', power: 19 },
+             { type: 'monster', name: 'Bat', image: 'images/bat.png', power: 8 },
+             { type: 'monster', name: 'Golem', image: 'images/golem.png', power: 30 }
         ];
 
         let monstersToPlace = shuffleArray(baseMonsters).map(m => ({ ...m, power: (m.power || 0) + powerBonus }));
@@ -503,7 +503,7 @@ const App: React.FC = () => {
         <div className="w-full h-full bg-gray-900 p-4 sm:p-6 flex flex-col gap-4 border border-gray-700">
             {/* Logo for Desktop */}
             <div className="hidden lg:flex items-center gap-4 pb-4 border-b border-gray-700">
-                <img src="https://raw.githubusercontent.com/banyapon/Blockchain101/refs/heads/main/game/images/logo.png" alt="Dice Dungeon Logo" className="h-12 w-auto"/>
+                <img src="images/logo.png" alt="Dice Dungeon Logo" className="h-12 w-auto"/>
                 <h1 className="text-2xl font-bold text-yellow-300">DICE DUNGEON</h1>
             </div>
 
@@ -596,7 +596,7 @@ const App: React.FC = () => {
                 <div className="w-full flex-grow flex flex-col items-center h-full">
                     {/* Mobile Logo */}
                     <div className="w-full flex justify-center py-2 lg:hidden">
-                        <img src="https://raw.githubusercontent.com/banyapon/Blockchain101/refs/heads/main/game/images/logo.png" alt="Dice Dungeon Logo" className="h-10 w-auto"/>
+                        <img src="images/logo.png" alt="Dice Dungeon Logo" className="h-10 w-auto"/>
                     </div>
                     {/* Board Section */}
                     <div className="flex-grow w-full flex flex-col items-center justify-center">
@@ -622,7 +622,7 @@ const App: React.FC = () => {
                                 })}
                             </div>
                             <div id="player" ref={playerRef} className="player">
-                                <img src="https://raw.githubusercontent.com/banyapon/Blockchain101/refs/heads/main/game/images/hero.png" alt="Player Icon" />
+                                <img src="images/hero.png" alt="Player Icon" />
                             </div>
                         </div>
                     </div>
@@ -653,7 +653,7 @@ const App: React.FC = () => {
              {!web3 && (
                  <div className="modal-overlay">
                      <div className="modal-content">
-                        <img src="https://raw.githubusercontent.com/banyapon/Blockchain101/refs/heads/main/game/images/logo.png" alt="Game Logo" className="mx-auto w-48 h-auto mb-6" />
+                        <img src="images/logo.png" alt="Game Logo" className="mx-auto w-48 h-auto mb-6" />
                         <h1 className="text-2xl font-bold mb-2 text-white">Dice Dungeon</h1>
                         <p className="text-gray-400 mb-8">Connect your wallet to start the adventure.</p>
                         <button onClick={connectWallet} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">Connect Wallet</button>
@@ -716,7 +716,7 @@ const App: React.FC = () => {
                             {/* Player */}
                             <div className="relative">
                                 <h3 className="text-xl font-bold text-blue-400">You</h3>
-                                <img src="https://raw.githubusercontent.com/banyapon/Blockchain101/refs/heads/main/game/images/hero.png" className="w-24 h-24 mx-auto my-2"/>
+                                <img src="images/hero.png" className="w-24 h-24 mx-auto my-2"/>
                                 <div className="text-lg">HP: <span className="font-bold text-green-400">{Math.max(0, playerHealth)}</span></div>
                                 <div className="text-lg">ATK: <span className="font-bold text-yellow-400">{playerAttack}</span></div>
                                 {combatRolls?.player && <div className="combat-roll-display">{combatRolls.player}</div>}
