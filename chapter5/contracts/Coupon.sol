@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-
 contract SimpleCoupon {
     string public name = "SimpleCoupon";
     string public symbol = "SCPT";
@@ -10,39 +9,48 @@ contract SimpleCoupon {
     struct Coupon {
         string code;
         string description;
-        string image; //add New
+        string image;
         bool isUsed;
         address owner;
     }
-
+    //mapping
     mapping(uint256 => Coupon) public coupons;
-    mapping(address => uint256[]) public ownerCoupons;
+        mapping(address => uint256[]) public ownerCoupons;
 
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Not contract owner");
-        _;
+        modifier onlyOwner() {
+            require(msg.sender == owner, "Not contract owner");
+            _;
     }
 
+    //constructor
     constructor() {
         owner = msg.sender;
     }
 
+   	//function
     function awardCoupon(
         address to,
         string memory code,
         string memory description,
-        string memory image
+        string memory image  //add new
     ) public onlyOwner {
         coupons[nextTokenId] = Coupon(code, description, image, false, to);
         ownerCoupons[to].push(nextTokenId);
         nextTokenId++;
     }
 
-    function markAsUsed(uint256 tokenId) public onlyOwner {
-        require(
-            bytes(coupons[tokenId].code).length > 0,
-            "Coupon does not exist"
-        );
+    function claimCoupon(
+        string memory code,
+        string memory description,
+        string memory image
+    ) public {
+        coupons[nextTokenId] = Coupon(code, description, image, false, msg.sender);
+        ownerCoupons[msg.sender].push(nextTokenId);
+        nextTokenId++;
+    }
+
+     function markAsUsed(uint256 tokenId) public onlyOwner {
+        require(bytes(coupons[tokenId].code).length > 0, "Coupon does not exist");
         coupons[tokenId].isUsed = true;
     }
 
@@ -54,21 +62,12 @@ contract SimpleCoupon {
         }
         return result;
     }
-
     function getCoupon(
         uint256 tokenId
-    )
-        public
-        view
-        returns (string memory, string memory, string memory, bool, address)
-    {
+    ) public view returns (string memory, string memory,string memory, bool, address) {
         Coupon memory c = coupons[tokenId];
         return (c.code, c.description, c.image, c.isUsed, c.owner);
     }
 
-    function getTokenIdsByOwner(
-        address user
-    ) public view returns (uint256[] memory) {
-        return ownerCoupons[user];
-    }
+
 }
