@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 contract SimpleCoupon {
     string public name = "SimpleCoupon";
-    string public symbol = "SCPT";
+    string public symbol = "KUAY";
     address public owner;
     uint256 public nextTokenId;
 
@@ -15,11 +15,11 @@ contract SimpleCoupon {
     }
     //mapping
     mapping(uint256 => Coupon) public coupons;
-        mapping(address => uint256[]) public ownerCoupons;
+    mapping(address => uint256[]) public ownerCoupons;
 
-        modifier onlyOwner() {
-            require(msg.sender == owner, "Not contract owner");
-            _;
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Not contract owner");
+        _;
     }
 
     //constructor
@@ -27,30 +27,23 @@ contract SimpleCoupon {
         owner = msg.sender;
     }
 
-   	//function
+    //function
     function awardCoupon(
         address to,
         string memory code,
         string memory description,
-        string memory image  //add new
+        string memory image
     ) public onlyOwner {
         coupons[nextTokenId] = Coupon(code, description, image, false, to);
         ownerCoupons[to].push(nextTokenId);
         nextTokenId++;
     }
 
-    function claimCoupon(
-        string memory code,
-        string memory description,
-        string memory image
-    ) public {
-        coupons[nextTokenId] = Coupon(code, description, image, false, msg.sender);
-        ownerCoupons[msg.sender].push(nextTokenId);
-        nextTokenId++;
-    }
-
-     function markAsUsed(uint256 tokenId) public onlyOwner {
-        require(bytes(coupons[tokenId].code).length > 0, "Coupon does not exist");
+    function markAsUsed(uint256 tokenId) public onlyOwner {
+        require(
+            bytes(coupons[tokenId].code).length > 0,
+            "Coupon does not exist"
+        );
         coupons[tokenId].isUsed = true;
     }
 
@@ -62,12 +55,15 @@ contract SimpleCoupon {
         }
         return result;
     }
+
     function getCoupon(
         uint256 tokenId
-    ) public view returns (string memory, string memory,string memory, bool, address) {
+    )
+        public
+        view
+        returns (string memory, string memory, string memory, bool, address)
+    {
         Coupon memory c = coupons[tokenId];
         return (c.code, c.description, c.image, c.isUsed, c.owner);
     }
-
-
 }
